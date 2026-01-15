@@ -25,8 +25,6 @@ conda activate dqn-maze
 
 ### 2. 安装依赖
 
-推荐使用 `uv` 加速安装（也可用 `pip`）：
-
 ```bash
 pip install -r requirements.txt
 ```
