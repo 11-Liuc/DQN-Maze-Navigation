@@ -33,6 +33,12 @@ python main.py --mode tuning
 
 这会自动运行 3 组实验，每组对比 3 种配置，共 9 次训练。
 
+**注意**: 可以指定迷宫大小和是否使用随机障碍物：
+```bash
+# 在10x10随机地图上调优
+python main.py --mode tuning --maze_size 10 --random_obstacles
+```
+
 **输出文件**（保存在 `outputs/` 目录）：
 - `tuning_learning_rate.png` - 学习率对比图
 - `tuning_gamma.png` - 折扣因子对比图
@@ -47,15 +53,15 @@ python main.py --mode tuning
 
 ```bash
 # lr = 0.0001（较小）
-python main.py --mode train --lr 0.0001 --episodes 500
+python main.py --mode train --lr 0.0001 --episodes 1000
 mv outputs/training_logs.csv outputs/logs_lr_0.0001.csv
 
 # lr = 0.001（默认）
-python main.py --mode train --lr 0.001 --episodes 500
+python main.py --mode train --lr 0.001 --episodes 1000
 mv outputs/training_logs.csv outputs/logs_lr_0.001.csv
 
 # lr = 0.01（较大）
-python main.py --mode train --lr 0.01 --episodes 500
+python main.py --mode train --lr 0.01 --episodes 1000
 mv outputs/training_logs.csv outputs/logs_lr_0.01.csv
 ```
 
@@ -63,15 +69,15 @@ mv outputs/training_logs.csv outputs/logs_lr_0.01.csv
 
 ```bash
 # gamma = 0.9
-python main.py --mode train --gamma 0.9 --episodes 500
+python main.py --mode train --gamma 0.9 --episodes 1000
 mv outputs/training_logs.csv outputs/logs_gamma_0.9.csv
 
 # gamma = 0.95
-python main.py --mode train --gamma 0.95 --episodes 500
+python main.py --mode train --gamma 0.95 --episodes 1000
 mv outputs/training_logs.csv outputs/logs_gamma_0.95.csv
 
 # gamma = 0.99（默认）
-python main.py --mode train --gamma 0.99 --episodes 500
+python main.py --mode train --gamma 0.99 --episodes 1000
 mv outputs/training_logs.csv outputs/logs_gamma_0.99.csv
 ```
 
@@ -79,16 +85,16 @@ mv outputs/training_logs.csv outputs/logs_gamma_0.99.csv
 
 ```bash
 # 快速衰减 decay = 0.95
-python main.py --mode train --epsilon_decay 0.95 --episodes 500
+python main.py --mode train --epsilon_decay 0.95 --episodes 1000
 mv outputs/training_logs.csv outputs/logs_decay_0.95.csv
 
-# 默认衰减 decay = 0.99
-python main.py --mode train --epsilon_decay 0.99 --episodes 500
-mv outputs/training_logs.csv outputs/logs_decay_0.99.csv
-
-# 慢速衰减 decay = 0.995
-python main.py --mode train --epsilon_decay 0.995 --episodes 500
+# 默认衰减 decay = 0.995
+python main.py --mode train --epsilon_decay 0.995 --episodes 1000
 mv outputs/training_logs.csv outputs/logs_decay_0.995.csv
+
+# 慢速衰减 decay = 0.999
+python main.py --mode train --epsilon_decay 0.999 --episodes 1000
+mv outputs/training_logs.csv outputs/logs_decay_0.999.csv
 ```
 
 ## 四、绘制训练曲线
@@ -165,11 +171,21 @@ python main.py --mode plot --csv outputs/logs_lr_0.001.csv
 ## 七、常见问题
 
 ### Q1: 训练时间太长怎么办？
-可以减少训练回合数：`--episodes 300`
+可以减少训练回合数或使用更小的迷宫：
+```bash
+# 减少回合数
+python main.py --mode train --episodes 500
+
+# 使用5x5迷宫（训练更快）
+python main.py --mode train --maze_size 5 --episodes 500
+```
 
 ### Q2: 如何对比多个 CSV 文件的曲线？
 可以用 Python 脚本读取多个 CSV 并绘制在同一张图上，参考 `src/hyperparameter_tuning.py` 中的 `plot_comparison` 函数。
 
 ### Q3: 实验结果不稳定怎么办？
 DQN 训练有随机性，建议每组配置运行 2-3 次取平均。
+
+### Q4: 随机障碍物训练有什么好处？
+使用 `--random_obstacles` 可以让智能体学习通用策略而非记忆固定路径，提升泛化能力。
 

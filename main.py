@@ -49,7 +49,11 @@ def train(args):
     os.makedirs("outputs", exist_ok=True)
 
     # 初始化环境和智能体
-    env = MazeEnv(maze_id=args.maze_id)
+    env = MazeEnv(
+        maze_id=args.maze_id,
+        random_obstacles=args.random_obstacles,
+        maze_size=args.maze_size
+    )
     agent = DQNAgent(
         state_dim=2,
         action_dim=4,
@@ -139,7 +143,11 @@ def test(args):
     print("DQN 迷宫寻路智能体 - 测试模式")
     print("=" * 50)
 
-    env = MazeEnv(maze_id=args.maze_id)
+    env = MazeEnv(
+        maze_id=args.maze_id,
+        random_obstacles=args.random_obstacles,
+        maze_size=args.maze_size
+    )
     agent = DQNAgent(state_dim=2, action_dim=4)
 
     # 加载模型
@@ -155,29 +163,40 @@ def test(args):
     # 运行测试
     success_count = 0
     total_steps = 0
+    total_reward = 0
+    collision_count = 0
 
     for episode in range(args.test_episodes):
         state = env.reset()
         steps = 0
+        episode_reward = 0
+        episode_collisions = 0
 
         for step in range(args.max_steps):
             action = agent.choose_action(state)
             next_state, reward, done = env.step(action)
+            episode_reward += reward
+            if reward == -5:  # 撞墙
+                episode_collisions += 1
             state = next_state
             steps += 1
 
             if done:
-                if tuple(state) == env.goal:
+                if tuple(env.state) == env.goal:
                     success_count += 1
                 break
 
         total_steps += steps
-        print(f"测试 {episode+1}: 步数={steps}, 到达终点={'是' if tuple(state)==env.goal else '否'}")
+        total_reward += episode_reward
+        collision_count += episode_collisions
+        print(f"测试 {episode+1}: 步数={steps}, 奖励={episode_reward:.1f}, 撞墙={episode_collisions}次, 到达终点={'是' if tuple(env.state)==env.goal else '否'}")
 
     print("\n" + "=" * 50)
     print(f"测试结果: 成功率 {success_count}/{args.test_episodes} "
           f"({100*success_count/args.test_episodes:.1f}%)")
     print(f"平均步数: {total_steps/args.test_episodes:.1f}")
+    print(f"平均奖励: {total_reward/args.test_episodes:.1f}")
+    print(f"平均撞墙次数: {collision_count/args.test_episodes:.1f}")
     print("=" * 50)
 
 
@@ -187,7 +206,11 @@ def visualize(args):
     print("DQN 迷宫寻路智能体 - 可视化模式")
     print("=" * 50)
 
-    env = MazeEnv(maze_id=args.maze_id)
+    env = MazeEnv(
+        maze_id=args.maze_id,
+        random_obstacles=args.random_obstacles,
+        maze_size=args.maze_size
+    )
     viz = MazeVisualizer(env)
 
     if args.model and os.path.exists(args.model):
@@ -260,11 +283,15 @@ def main():
     # 环境参数
     parser.add_argument('--maze_id', type=int, default=0,
                         help='迷宫ID (0-3)')
+    parser.add_argument('--maze_size', type=int, default=10,
+                        help='迷宫大小 (默认10x10)')
+    parser.add_argument('--random_obstacles', action='store_true',
+                        help='启用随机障碍物生成')
     parser.add_argument('--max_steps', type=int, default=200,
                         help='每回合最大步数')
 
     # 训练参数
-    parser.add_argument('--episodes', type=int, default=500,
+    parser.add_argument('--episodes', type=int, default=1000,
                         help='训练回合数')
     parser.add_argument('--lr', type=float, default=0.001,
                         help='学习率')
