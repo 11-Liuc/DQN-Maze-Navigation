@@ -8,7 +8,7 @@ from memory import ReplayMemory
 class DQNAgent:
     def __init__(
         self,
-        state_dim=2,
+        state_dim=10,
         action_dim=4,
         lr=0.001,
         gamma=0.99,

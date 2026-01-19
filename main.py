@@ -55,7 +55,7 @@ def train(args):
         maze_size=args.maze_size
     )
     agent = DQNAgent(
-        state_dim=2,
+        state_dim=10,
         action_dim=4,
         lr=args.lr,
         gamma=args.gamma,
@@ -148,7 +148,7 @@ def test(args):
         random_obstacles=args.random_obstacles,
         maze_size=args.maze_size
     )
-    agent = DQNAgent(state_dim=2, action_dim=4)
+    agent = DQNAgent(state_dim=10, action_dim=4)
 
     # 加载模型
     model_path = args.model if args.model else 'outputs/best_model.pth'
@@ -215,7 +215,7 @@ def visualize(args):
 
     if args.model and os.path.exists(args.model):
         # 可视化训练好的智能体
-        agent = DQNAgent(state_dim=2, action_dim=4)
+        agent = DQNAgent(state_dim=10, action_dim=4)
         agent.policy_net.load_state_dict(torch.load(args.model, weights_only=True))
         print(f"已加载模型: {args.model}")
 

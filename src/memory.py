@@ -9,7 +9,7 @@ class ReplayMemory:
     存储 (state, action, reward, next_state, done)
     """
 
-    def __init__(self, capacity=10000):
+    def __init__(self, capacity=50000):
         self.buffer = deque(maxlen=capacity)
 
     def push(self, state, action, reward, next_state, done):

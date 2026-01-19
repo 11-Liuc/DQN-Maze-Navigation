@@ -48,16 +48,16 @@ class MazeEnv:
             maze_size: 迷宫大小，默认为5
         """
         self.maze_size = maze_size
-        self.state_dim = 2
+        self.state_dim = 10
         self.action_dim = 4
         self.random_obstacles = random_obstacles
         self.obstacle_ratio = obstacle_ratio
 
-        # Gymnasium 兼容的空间定义（归一化坐标）
+        # Gymnasium 兼容的空间定义（归一化坐标 + 8方向障碍物检测）
         if HAS_GYM:
             self.observation_space = spaces.Box(
                 low=0, high=1,
-                shape=(2,), dtype=np.float32
+                shape=(10,), dtype=np.float32
             )
             self.action_space = spaces.Discrete(4)
 
@@ -145,6 +145,30 @@ class MazeEnv:
 
         return False
 
+    def _get_observation(self):
+        """获取增强的观察状态（归一化坐标 + 8方向障碍物检测）"""
+        normalized_pos = [
+            self.state[0] / (self.maze_size - 1),
+            self.state[1] / (self.maze_size - 1)
+        ]
+
+        directions = [
+            (-1, 0), (1, 0), (0, -1), (0, 1),
+            (-1, -1), (-1, 1), (1, -1), (1, 1)
+        ]
+
+        obstacles = []
+        for dx, dy in directions:
+            nx, ny = self.state[0] + dx, self.state[1] + dy
+            if (nx < 0 or nx >= self.maze_size or
+                ny < 0 or ny >= self.maze_size or
+                self.maze[nx, ny] == 1):
+                obstacles.append(1.0)
+            else:
+                obstacles.append(0.0)
+
+        return normalized_pos + obstacles
+
     def reset(self, seed=None):
         """
         重置环境
@@ -153,7 +177,7 @@ class MazeEnv:
             seed: 随机种子（Gymnasium 兼容）
 
         Returns:
-            state: 初始状态 [x/(size-1), y/(size-1)] 归一化坐标
+            state: 初始状态（归一化坐标 + 8方向障碍物检测）
         """
         if seed is not None:
             np.random.seed(seed)
@@ -163,14 +187,8 @@ class MazeEnv:
 
         self.state = list(self.start)
         self.steps = 0
-        # 计算初始距离（曼哈顿距离）
         self.previous_distance = abs(self.start[0] - self.goal[0]) + abs(self.start[1] - self.goal[1])
-        # 返回归一化坐标
-        normalized_state = [
-            self.state[0] / (self.maze_size - 1),
-            self.state[1] / (self.maze_size - 1)
-        ]
-        return normalized_state
+        return self._get_observation()
 
     def step(self, action):
         """
@@ -180,68 +198,42 @@ class MazeEnv:
             action: 动作编号 (0-3)
 
         Returns:
-            next_state: 下一状态（归一化坐标）
+            next_state: 下一状态（归一化坐标 + 8方向障碍物检测）
             reward: 奖励值
             done: 是否结束
         """
         self.steps += 1
 
-        # 计算新位置
         dx, dy = self.ACTIONS[action]
         new_x = self.state[0] + dx
         new_y = self.state[1] + dy
 
-        # 检查边界碰撞
         if not (0 <= new_x < self.maze_size and 0 <= new_y < self.maze_size):
-            # 撞墙（边界）
             reward = -5
             done = self.steps >= self.max_steps
-            normalized_state = [
-                self.state[0] / (self.maze_size - 1),
-                self.state[1] / (self.maze_size - 1)
-            ]
-            return normalized_state, reward, done
+            return self._get_observation(), reward, done
 
-        # 检查墙壁碰撞
         if self.maze[new_x, new_y] == 1:
-            # 撞墙（障碍物）
             reward = -5
             done = self.steps >= self.max_steps
-            normalized_state = [
-                self.state[0] / (self.maze_size - 1),
-                self.state[1] / (self.maze_size - 1)
-            ]
-            return normalized_state, reward, done
+            return self._get_observation(), reward, done
 
-        # 移动成功
-        old_state = self.state.copy()
         self.state = [new_x, new_y]
-
-        # 计算当前距离
         current_distance = abs(self.state[0] - self.goal[0]) + abs(self.state[1] - self.goal[1])
 
-        # 检查是否到达终点
         if tuple(self.state) == self.goal:
             reward = 10
             done = True
         else:
-            # 基础步数惩罚
             reward = -0.1
-            # 距离奖励：靠近目标+0.1，远离目标-0.1
             if current_distance < self.previous_distance:
                 reward += 0.1
             elif current_distance > self.previous_distance:
                 reward -= 0.1
             done = self.steps >= self.max_steps
 
-        # 更新距离
         self.previous_distance = current_distance
-
-        normalized_state = [
-            self.state[0] / (self.maze_size - 1),
-            self.state[1] / (self.maze_size - 1)
-        ]
-        return normalized_state, reward, done
+        return self._get_observation(), reward, done
 
     def render(self, mode='text'):
         """
