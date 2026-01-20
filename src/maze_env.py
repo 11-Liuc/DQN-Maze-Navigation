@@ -84,6 +84,7 @@ class MazeEnv:
             if str(maze_id) in configs:
                 cfg = configs[str(maze_id)]
                 self.maze = np.array(cfg["maze"])
+                self.maze_size = self.maze.shape[0]  # 更新maze_size为实际大小
                 self.start = tuple(cfg["start"])
                 self.goal = tuple(cfg["goal"])
                 return
@@ -96,6 +97,7 @@ class MazeEnv:
             [1, 1, 0, 0, 0],
             [0, 0, 0, 1, 0]
         ])
+        self.maze_size = self.maze.shape[0]  # 更新maze_size为实际大小
         self.start = (0, 0)  # 起点：左上角
         self.goal = (4, 4)   # 终点：右下角
 

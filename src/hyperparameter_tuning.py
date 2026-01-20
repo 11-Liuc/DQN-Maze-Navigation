@@ -48,7 +48,7 @@ def train_with_config(config, episodes=300, verbose=False):
     """
     env = MazeEnv(maze_id=0)
     agent = DQNAgent(
-        state_dim=2,
+        state_dim=10,
         action_dim=4,
         lr=config.get('lr', 0.001),
         gamma=config.get('gamma', 0.99),
