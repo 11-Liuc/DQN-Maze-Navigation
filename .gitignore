@@ -220,3 +220,6 @@ training_logs.csv
 .venv/
 venv/
 env/
+
+# PPT制作文件夹
+PPT制作/
